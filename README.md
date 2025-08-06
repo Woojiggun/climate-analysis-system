@@ -6,7 +6,7 @@
 **Goal**: Prove this hypothesis through scientific data analysis and visualize it with an interactive web system.
 
 ## 🌐 Live Demo
-[View Live Dashboard](https://yourusername.github.io/climate-analysis-system) *(Update with your GitHub username)*
+[View Live Dashboard](https://Woojiggun.github.io/climate-analysis-system) *(Update with your GitHub username)*
 
 ## 🛠️ Tech Stack
 - **Backend**: Python 3.9+, FastAPI, Pandas, NumPy, SciPy, SQLite
