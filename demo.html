@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Analysis System - Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: #1e3a8a;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 Climate Analysis System</h1>
+        <p>Analyzing CO₂-Temperature Gaps and Groundwater Correlation</p>
+    </div>
+    
+    <div class="container">
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-label">Current CO₂ Level</div>
+                <div class="stat-value" id="co2-level">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Temperature Anomaly</div>
+                <div class="stat-value" id="temp-anomaly">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unexplained Gap</div>
+                <div class="stat-value" id="gap-percent">---</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Groundwater Level</div>
+                <div class="stat-value" id="gw-level">---</div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('gap')">CO₂ Gap Analysis</div>
+            <div class="tab" onclick="showTab('trend')">Temperature Trends</div>
+            <div class="tab" onclick="showTab('about')">About</div>
+        </div>
+        
+        <div class="card" id="gap-tab">
+            <h2>CO₂ Gap Analysis Chart</h2>
+            <div class="chart-container">
+                <canvas id="gapChart"></canvas>
+            </div>
+            <div class="info-box">
+                <strong>Key Finding:</strong> Actual temperature rise consistently EXCEEDS CO₂-based predictions by 1.0-1.2°C, with approximately 57% of the observed warming unexplained by CO₂ alone. This significant gap suggests groundwater depletion and other factors are major contributors to global warming.
+            </div>
+        </div>
+        
+        <div class="card" id="trend-tab" style="display:none;">
+            <h2>Temperature Trends</h2>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+            <div class="info-box">
+                <strong>Analysis:</strong> This chart shows the long-term temperature trend compared to CO₂ levels, demonstrating the accelerating warming pattern and the growing gap between expected and actual temperatures.
+            </div>
+        </div>
+        
+        <div class="card" id="about-tab" style="display:none;">
+            <h2>About This System</h2>
+            <p>This Climate Analysis System was developed for the UN Global Youth AI Future Innovation Competition 2025.</p>
+            <br>
+            <h3>Core Hypothesis</h3>
+            <p>Temperature increases that cannot be explained by CO₂ alone exist, and the cause lies in groundwater depletion.</p>
+            <br>
+            <h3>Technical Implementation</h3>
+            <ul style="margin-left: 20px;">
+                <li>Backend: Python FastAPI with real-time data from NOAA and NASA</li>
+                <li>Frontend: React.js with TypeScript and Chart.js</li>
+                <li>Analysis: Advanced statistical algorithms including time-lag correlation</li>
+            </ul>
+        </div>
+        
+        <div class="loading" id="loading">Loading data...</div>
+        <div class="error" id="error" style="display:none;"></div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let gapChart = null;
+        let trendChart = null;
+        
+        async function loadData() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                // Fetch summary data
+                const [co2Summary, tempSummary, gapSummary, gwSummary] = await Promise.all([
+                    axios.get(`${API_BASE}/api/co2/summary`),
+                    axios.get(`${API_BASE}/api/temperature/summary`),
+                    axios.get(`${API_BASE}/api/analysis/co2-gap/summary`),
+                    axios.get(`${API_BASE}/api/groundwater/summary?location=California Central Valley`)
+                ]);
+                
+                // Update stats
+                document.getElementById('co2-level').textContent = 
+                    co2Summary.data.statistics.latest_ppm.toFixed(1) + ' ppm';
+                document.getElementById('temp-anomaly').textContent = 
+                    '+' + tempSummary.data.anomaly_statistics.latest_anomaly.toFixed(2) + '°C';
+                document.getElementById('gap-percent').textContent = 
+                    gapSummary.data.percentage_statistics.mean_gap_percentage.toFixed(1) + '%';
+                document.getElementById('gw-level').textContent = 
+                    gwSummary.data.water_level_statistics.current_level_m.toFixed(1) + ' m';
+                
+                // Load gap analysis data - extend to Dec 2025 to ensure all data is shown
+                const gapData = await axios.get(`${API_BASE}/api/analysis/co2-gap`, {
+                    params: {
+                        start_date: '2022-01-01T00:00:00',
+                        end_date: '2025-12-31T23:59:59'
+                    }
+                });
+                
+                createGapChart(gapData.data);
+                
+                document.getElementById('loading').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 
+                    'Error loading data. Make sure the backend server is running on http://localhost:8000';
+            }
+        }
+        
+        function createGapChart(data) {
+            const ctx = document.getElementById('gapChart').getContext('2d');
+            
+            if (gapChart) {
+                gapChart.destroy();
+            }
+            
+            gapChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [
+                        {
+                            label: 'Actual Temperature',
+                            data: data.map(d => d.actual_temp),
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Theoretical Temperature (CO₂ only)',
+                            data: data.map(d => d.theoretical_temp),
+                            borderColor: 'rgb(53, 162, 235)',
+                            backgroundColor: 'rgba(53, 162, 235, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Unexplained Gap',
+                            data: data.map(d => d.unexplained_gap),
+                            borderColor: 'rgb(255, 206, 86)',
+                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'CO₂ Gap Analysis: Theoretical vs Actual Temperature'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function createTrendChart() {
+            try {
+                // Fetch temperature and CO2 data for trend analysis
+                const [tempData, co2Data] = await Promise.all([
+                    axios.get(`${API_BASE}/api/temperature/global`, {
+                        params: {
+                            start_date: '2020-01-01T00:00:00',
+                            end_date: '2025-12-31T23:59:59'
+                        }
+                    }),
+                    axios.get(`${API_BASE}/api/co2/monthly`, {
+                        params: {
+                            start_date: '2020-01-01T00:00:00',
+                            end_date: '2025-12-31T23:59:59'
+                        }
+                    })
+                ]);
+                
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                
+                if (trendChart) {
+                    trendChart.destroy();
+                }
+                
+                // Merge data by date
+                const mergedData = {};
+                tempData.data.forEach(d => {
+                    const key = d.date.substring(0, 7); // YYYY-MM
+                    mergedData[key] = { ...mergedData[key], temp: d.temperature_anomaly };
+                });
+                
+                co2Data.data.forEach(d => {
+                    const key = d.date.substring(0, 7); // YYYY-MM
+                    mergedData[key] = { ...mergedData[key], co2: d.ppm };
+                });
+                
+                const sortedDates = Object.keys(mergedData).sort();
+                const tempValues = sortedDates.map(d => mergedData[d].temp || null);
+                const co2Values = sortedDates.map(d => mergedData[d].co2 || null);
+                
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates.map(d => {
+                            const [year, month] = d.split('-');
+                            return `${month}/${year.substring(2)}`;
+                        }),
+                        datasets: [
+                            {
+                                label: 'Temperature Anomaly (°C)',
+                                data: tempValues,
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                yAxisID: 'y-temp',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'CO₂ Concentration (ppm)',
+                                data: co2Values,
+                                borderColor: 'rgb(53, 162, 235)',
+                                backgroundColor: 'rgba(53, 162, 235, 0.1)',
+                                yAxisID: 'y-co2',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Temperature Anomaly vs CO₂ Concentration Trends'
+                            }
+                        },
+                        scales: {
+                            'y-temp': {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Temperature Anomaly (°C)'
+                                },
+                                ticks: {
+                                    color: 'rgb(255, 99, 132)'
+                                }
+                            },
+                            'y-co2': {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'CO₂ (ppm)'
+                                },
+                                ticks: {
+                                    color: 'rgb(53, 162, 235)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating trend chart:', error);
+            }
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.card').forEach(card => {
+                if (card.id.endsWith('-tab')) {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Create trend chart when Temperature Trends tab is selected
+            if (tabName === 'trend' && !trendChart) {
+                createTrendChart();
+            }
+        }
+        
+        // Load data when page loads
+        window.onload = function() {
+            loadData();
+            // Refresh data every 5 minutes
+            setInterval(loadData, 5 * 60 * 1000);
+        };
+    </script>
+</body>
+</html>
